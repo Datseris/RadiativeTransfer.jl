@@ -48,5 +48,6 @@ makedocs(
 deploydocs(
     repo = "github.com/RupeshJey/RadiativeTransfer.jl.git",
     target = "build",
+    devbranch = "main",
     push_preview = true,
 )
