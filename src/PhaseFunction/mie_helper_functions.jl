@@ -1,6 +1,5 @@
-#=
-This file contains short helper functions that are used throughout the module
-=#
+#= 
+This file contains short helper functions that are used throughout the module =#
 
 """ Convenience function to perform (-1)^x using x's parity """
 exp_m1(x) = iseven(x) ? 1 : -1
@@ -12,7 +11,7 @@ See eq 6 in Sanghavi 2014
 - `size_parameter` size parameter of the aerosol (2πr/λ)
 The function returns a rounded integer, following conventions by BH, Rooj/Stap, Siewert 
 """
-get_n_max(size_parameter) = round(Int, size_parameter + 4.05 * size_parameter^(1/3) + 10)
+get_n_max(size_parameter) = round(Int, size_parameter + 4.05 * size_parameter^(1 / 3) + 10)
 
 """
     $(FUNCTIONNAME)(size_parameter,refractive_idx::Number,an,bn,Dn)
@@ -30,21 +29,22 @@ function compute_mie_ab!(size_param, refractive_idx::Number, an, bn, Dn)
     FT = typeof(refractive_idx)
 
     # Compute y
-    y = size_param * refractive_idx
+    y = size_param * -im * refractive_idx
 
     # Maximum expansion (see eq. A17 from de Rooij and Stap, 1984)
     n_max = get_n_max(size_param)
 
     # Make sure downward recurrence starts higher up 
     # (at least 15, check eq. A9 in de Rooij and Stap, 1984, may need to check what is needed)
-    nmx = round(Int, max(n_max, abs(y)) + 50)
+    nmx = round(Int, max(n_max, abs(y)) + 25)
+    # @show nmx
     @assert size(an)[1] >= n_max
     @assert size(an) == size(bn)
     fill!(Dn, 0);
 
     # Dn as in eq 4.88, Bohren and Huffman, to calculate an and bn
     # Downward Recursion, eq. 4.89, Bohren and Huffman
-    [Dn[n] = ((n+1) / y) - (1 / (Dn[n+1] + (n+1) / y)) for n = (nmx - 1):-1:1]
+    [Dn[n] = ((n + 1) / y) - (1 / (Dn[n + 1] + (n + 1) / y)) for n = (nmx - 1):-1:1]
 
     # Get recursion for bessel functions ψ and ξ
     ψ₀, ψ₁, χ₀, χ₁ =  (cos(size_param), sin(size_param), -sin(size_param), cos(size_param))
@@ -204,7 +204,7 @@ function reconstruct_phase(greek_coefs, μ; returnLeg=false)
 
     # Compute prefactor
     fac = zeros(l_max);
-    [fac[l + 1] = sqrt(1 / ((l-1) * l * (l+1) * (l+2))) for l = 2:(l_max-1)]
+    [fac[l + 1] = sqrt(1 / ((l - 1) * l * (l + 1) * (l + 2))) for l = 2:(l_max - 1)]
 
     # In matrix form:
     f₁₁[:] = P * greek_coefs.β                                           # a₁ in Rooij notation
@@ -254,11 +254,11 @@ end
 """ Compute probability weights of radii """
 function compute_wₓ(size_distribution, wᵣ, r, r_max) 
     
-    wₓ = pdf.(size_distribution,r)      # Weights from distribution
+    wₓ = pdf.(size_distribution, r)      # Weights from distribution
     wₓ .*= wᵣ                           # pre multiply with wᵣ to get proper means eventually:
 
     # normalize (could apply a check whether cdf.(size_distribution,r_max) is larger than 0.99:
-    @info "Fraction of size distribution cut by max radius: $((1-cdf.(size_distribution,r_max))*100) %"  
+    @info "Fraction of size distribution cut by max radius: $((1 - cdf.(size_distribution, r_max)) * 100) %"  
     wₓ /= sum(wₓ)
     return wₓ
 end
@@ -274,7 +274,7 @@ See Sanghavi 2014, eq. 15
 """
 function construct_Π_matrix(mo::Stokes_IQUV, P, R, T, l::Int, m::Int; sign_change=false)
     if sign_change # (basically gets it for -μ due to symmetries on P,R,T)
-        if isodd(l-m)
+        if isodd(l - m)
             Π = [SMatrix{4,4}([-P[i,l,m] 0 0 0 ; 0 -R[i,l,m] -T[i,l,m] 0; 0 -T[i,l,m] -R[i,l,m] 0; 0 0 0 -P[i,l,m]]) for i in 1:size(P, 1)] 
         else
             Π = [SMatrix{4,4}([P[i,l,m] 0 0 0 ; 0 R[i,l,m] T[i,l,m] 0; 0 T[i,l,m] R[i,l,m] 0; 0 0 0 P[i,l,m]]) for i in 1:size(P, 1)]
@@ -292,7 +292,7 @@ See Sanghavi 2014, eq. 15
 """
 function construct_Π_matrix(mo::Stokes_IQU, P, R, T, l::Int, m::Int; sign_change=false)
     if sign_change # (basically gets it for -μ due to symmetries on P,R,T)
-        if isodd(l-m)
+        if isodd(l - m)
             Π = [SMatrix{3,3}([-P[i,l,m] 0 0  ; 0 -R[i,l,m] -T[i,l,m] ; 0 -T[i,l,m] -R[i,l,m] ]) for i in 1:size(P, 1)] 
         else
             Π = [SMatrix{3,3}([P[i,l,m] 0 0  ; 0 R[i,l,m] T[i,l,m] ; 0 T[i,l,m] R[i,l,m] ]) for i in 1:size(P, 1)]
@@ -388,7 +388,7 @@ function compute_Z_moments(mod::AbstractPolarizationType, μ, α, β, γ, δ, ϵ
                 A⁺⁻[:,:,i,j] += Π[i] * 𝐁 * Π⁻[j]
             end
         end
-    end
+        end
 
     # Now get to the Z part:
     for imu in eachindex(μ), jmu in eachindex(μ)
