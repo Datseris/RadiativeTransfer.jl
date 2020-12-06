@@ -10,3 +10,7 @@ packages
 # *.csv
 
 docs/build/*
+src/CrossSection/testVector.jl
+src/CrossSection/LineShapes/testAbstraction.jl
+src/savedInterpolation.jld
+src/Notebooks/tmp.gif
